@@ -2,7 +2,6 @@ import uuid
 
 from rest_framework import serializers
 from .models import ParadoxUser, Referral, Questions, Hints, Profile
-from django.contrib.auth.hashers import mask_hash
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -42,16 +41,6 @@ class HintSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class ReferralSerializer(serializers.ModelSerializer):
-    """
-    Serializer for Referral Model
-    """
-
-    class Meta:
-        model = Referral
-        fields = "__all__"
-
-
 class ProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for Profile Model
@@ -69,4 +58,21 @@ class LeaderBoardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        exclude = ['reg_time', 'attempts', 'coins', 'super_coins']
+        exclude = ['reg_time', 'attempts', 'super_coins']
+
+
+class RefferalSerializer(serializers.Serializer):
+    """
+    Serializer For Referral
+    """
+    ref_code = serializers.CharField(required=True)
+    user = serializers.CharField(required=True)
+
+    def validate(self, attrs):
+        ref_code = attrs.get('ref_code')
+        user = attrs.get('user')
+        if not Referral.objects.filter(ref_code=ref_code).exists():
+            raise serializers.ValidationError({'ref_code': ('Invalid Referral Code')})
+        if not ParadoxUser.objects.filter(google_id=user).exists():
+            raise serializers.ValidationError({'user': ('Invalid Google Id')})
+        return super().validate(attrs)
