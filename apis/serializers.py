@@ -1,7 +1,7 @@
 import uuid
 
 from rest_framework import serializers
-from .models import ParadoxUser, Referral, Questions, Hints, Profile
+from .models import ParadoxUser, Referral, Questions, Hints, Profile, Rules, ExeMembers, UserHintLevel
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -76,3 +76,111 @@ class RefferalSerializer(serializers.Serializer):
         if not ParadoxUser.objects.filter(google_id=user).exists():
             raise serializers.ValidationError({'user': ('Invalid Google Id')})
         return super().validate(attrs)
+
+
+class RuleSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Rules Model
+    """
+
+    class Meta:
+        model = Rules
+        fields = "__all__"
+
+
+class ExeMembersSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Developer Model
+    """
+
+    class Meta:
+        model = ExeMembers
+        fields = "__all__"
+
+
+class UserHintLevelSerializer(serializers.Serializer):
+    """
+    Serializer for Updating Hint Info
+    """
+    google_id = serializers.CharField()
+    level = serializers.IntegerField()
+    hintNumber = serializers.IntegerField(min_value=1, max_value=3)
+
+    def validate(self, attrs):
+        google_id = attrs.get('google_id')
+        level = attrs.get('level')
+        hintNumber = attrs.get('hintNumber')
+        if not ParadoxUser.objects.filter(google_id=google_id).exists():
+            raise serializers.ValidationError({'user': ('User Not Found.', 'Invalid Google Id.')})
+        hintDetails = UserHintLevel.objects.get(user__google_id=google_id)
+        if hintDetails.level == level:
+            if hintDetails.hintNumber >= hintNumber:
+                raise serializers.ValidationError({'user': ('User Has Already Redeemed the Hint.',)})
+        else:
+            raise serializers.ValidationError({'level': ('Invalid Level Number',)})
+        return super().validate(attrs)
+
+
+class AnswerSerializer(serializers.Serializer):
+    """
+    Serializer for checking answer
+    """
+    answer = serializers.CharField(max_length=255)
+    google_id = serializers.CharField()
+    level = serializers.IntegerField()
+
+    def validate(self, attrs):
+        google_id = attrs.get('google_id')
+        if not ParadoxUser.objects.filter(google_id=google_id).exists():
+            raise serializers.ValidationError({'user': ('User Not Found.', 'Invalid Google Id.')})
+
+        return super().validate(attrs)
+
+
+class UpdateCoinSerializer(serializers.Serializer):
+    """
+    Update Coin For User Serializer
+    """
+    google_id = serializers.CharField()
+    coins = serializers.IntegerField(min_value=0, max_value=100)
+
+    def validate(self, attrs):
+        google_id = attrs.get('google_id')
+        if not ParadoxUser.objects.filter(google_id=google_id).exists():
+            raise serializers.ValidationError({'user': ('User Not Found.', 'Invalid Google Id.')})
+        return super().validate(attrs)
+
+
+class MessageSerializer(serializers.Serializer):
+    """
+    Message Serializer
+    """
+    message = serializers.CharField(max_length=255)
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    """
+    User Profile Serializer
+    """
+
+    class Meta:
+        model = Profile
+        fields = "__all__"
+
+
+class UserDetailsSerializer(serializers.ModelSerializer):
+    """
+    Serializer for User Details (ParadoxUser model + Profile model) serializer
+    """
+    profile = ProfileSerializer()
+
+    class Meta:
+        model = ParadoxUser
+        fields = "__all__"
+
+
+class ExeMembersPositionListSerializer(serializers.Serializer):
+    """
+    Serializer for Exe Members Positions List
+    """
+    list = serializers.ListField()

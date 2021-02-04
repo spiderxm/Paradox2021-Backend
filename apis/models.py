@@ -81,17 +81,37 @@ class Rules(models.Model):
     rule = models.CharField(max_length=255)
 
 
-class Developers(models.Model):
+class ExeMembers(models.Model):
     """
-    Model To Store Info of Application Developers
+    Model For Exe Members
     """
     choices = (
         ('Full Stack', 'Full Stack'),
         ('Front End', 'Front End'),
         ('Back End', 'Back End')
     )
-    name = models.CharField(max_length=255)
-    category = models.CharField(max_length=255, choices=choices)
-    image = models.URLField(max_length=255)
-    githubHandle = models.URLField(max_length=255)
-    linkedinHandle = models.URLField(max_length=255)
+
+    position_choices = (
+        ('Developer', 'Developer'),
+        ('Mentor', 'Mentor'),
+        ('Final year', 'Final year'),
+        ('Coordinator', 'Coordinator'),
+        ('Executive', 'Executive'),
+        ('Volunteer', 'Volunteer')
+    )
+    name = models.CharField(max_length=255, validators=[
+        MinLengthValidator(limit_value=3, message="Name Length Should be greater than 3 charcters.")])
+    position = models.CharField(max_length=255, choices=position_choices)
+    category = models.CharField(max_length=255, choices=choices, null=True, blank=True)
+    image = models.URLField(max_length=255, null=False, blank=False)
+    githubUrl = models.URLField(max_length=255, null=True, blank=True, unique=True)
+    linkedInUrl = models.URLField(max_length=255, null=True, blank=True, unique=True)
+
+
+class UserHintLevel(models.Model):
+    """
+    Model for User Hints
+    """
+    user = models.ForeignKey(ParadoxUser, on_delete=models.CASCADE, unique=True, primary_key=True)
+    level = models.IntegerField(default=1)
+    hintNumber = models.IntegerField(default=0)
