@@ -5,7 +5,7 @@ from rest_framework.generics import GenericAPIView, ListAPIView, CreateAPIView
 from rest_framework.response import Response
 from .serializers import UserSerializer, LeaderBoardSerializer, ProfileSerializer, QuestionSerializer, HintSerializer, \
     RefferalSerializer, ExeMembersSerializer, UserHintLevelSerializer, AnswerSerializer, UpdateCoinSerializer, \
-    MessageSerializer, UserDetailsSerializer, ExeMembersPositionListSerializer
+    MessageSerializer, UserDetailsSerializer, ExeMembersPositionListSerializer, IsUserPresentSerializer
 from .models import Profile, Referral, ParadoxUser, Questions, Hints, ExeMembers, UserHintLevel
 
 
@@ -20,9 +20,12 @@ class UserView(GenericAPIView):
             description="User is Created.",
             schema=UserSerializer,
             examples={
-                "application/json": [
-
-                ]
+                "application/json": {
+                    "google_id": "rwkjgerwrgertglbget",
+                    "ref_code": "Done18440",
+                    "name": "Donald Trump",
+                    "email": "abcd@gmail.com"
+                }
             }
         ),
         "400": openapi.Response(
@@ -56,7 +59,7 @@ class UserView(GenericAPIView):
     @swagger_auto_schema(responses=response_schema_dict)
     def post(self, request):
         """
-        POST Method To Create User in Database.
+        ## POST Method To Create User in Database.
         """
         try:
             serializer = UserSerializer(data=request.data)
@@ -134,7 +137,7 @@ class LeaderBoardView(GenericAPIView):
     @swagger_auto_schema(responses=response_schema_dict)
     def get(self, request):
         """
-        Retrieve LeaderBoard
+        ## Retrieve LeaderBoard
         """
         try:
             return Response(LeaderBoardSerializer(self.get_queryset(), many=True).data, status=status.HTTP_200_OK)
@@ -317,9 +320,40 @@ class ReferralView(GenericAPIView):
     """
     serializer_class = RefferalSerializer
 
+    response_schema_dict = {
+        "200": openapi.Response(
+            description="Hints List",
+            schema=MessageSerializer,
+            examples={
+                "application/json": {
+                    "message": "Referral Successfully Availed"
+                }
+            }
+        ),
+        "400": openapi.Response(
+            description="User Not Found, Invalid Referral Code, Trying to redeem referral for self.",
+            schema=MessageSerializer,
+            examples={
+                "application/json": {
+                    'message': 'user has already availed referral points.'
+                },
+            }
+        ),
+        "500": openapi.Response(
+            description="Internal Server Error",
+            schema=MessageSerializer,
+            examples={
+                "application/json": {
+                    "message": "Internal Server Error"
+                }
+            }
+        )
+    }
+
+    @swagger_auto_schema(responses=response_schema_dict)
     def post(self, request):
         """
-        Post Method For Redeeming referral Points.
+        ## Post Method For Redeeming referral Points.
         """
         try:
             data = request.data
@@ -329,10 +363,10 @@ class ReferralView(GenericAPIView):
             user_profile = Profile.objects.get(user__google_id=serializer.validated_data['user'])
             referral = Referral.objects.get(ref_code=serializer.validated_data['ref_code'])
             if user_profile.refferral_availed:
-                return Response({'user': ['user has already availed referral points.']},
+                return Response({'message': 'user has already availed referral points.'},
                                 status=status.HTTP_400_BAD_REQUEST)
             if referral.user.google_id == user_profile.user.google_id:
-                return Response({'reg_code': 'Cannot Avail Referral of yourself.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'Cannot Avail Referral of yourself.'}, status=status.HTTP_400_BAD_REQUEST)
             user_profile.coins += 100
             user_profile.refferral_availed = True
             user_profile.save()
@@ -448,6 +482,8 @@ class ExeMemberPositionsView(GenericAPIView):
     """
     ## Exe Member Position View
     """
+    serializer_class = ExeMembersPositionListSerializer
+
     response_schema_dict = {
         "200": openapi.Response(
             description="Exe Member Positions List",
@@ -577,12 +613,49 @@ class UserPresentView(GenericAPIView):
     """
     View to check user present or not
     """
+    response_schema_dict = {
+        "200": openapi.Response(
+            description="User Found",
+            schema=IsUserPresentSerializer,
+            examples={
+                "application/json": {
+                    'userPresent': True
+                }
+            }
+        ),
+        "404": openapi.Response(
+            description="User Not Found",
+            schema=IsUserPresentSerializer,
+            examples={
+                "application/json": {
+                    'userPresent': True
+                }
+            }
+        ),
+        "500": openapi.Response(
+            description="Internal Server Error",
+            schema=MessageSerializer,
+            examples={
+                "application/json": {
+                    "message": "Internal Server Error"
+                }
+            }
+        )
+    }
+    serializer_class = IsUserPresentSerializer
 
+    @swagger_auto_schema(responses=response_schema_dict)
     def get(self, request, google_id):
-        if len(ParadoxUser.objects.filter(google_id=google_id)) > 0:
-            return Response({'user': True}, status=status.HTTP_200_OK)
-        else:
-            return Response({'user': False}, status=status.HTTP_404_NOT_FOUND)
+        """
+        ## Get Method to check whether a User with a google Id is present in database or not.
+        """
+        try:
+            if len(ParadoxUser.objects.filter(google_id=google_id)) > 0:
+                return Response({'userPresent': True}, status=status.HTTP_200_OK)
+            else:
+                return Response({'userPresent': False}, status=status.HTTP_404_NOT_FOUND)
+        except:
+            return Response({"message": "Internal Server Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UpdateUserCoinsView(GenericAPIView):
@@ -591,12 +664,43 @@ class UpdateUserCoinsView(GenericAPIView):
     """
 
     serializer_class = UpdateCoinSerializer
+    response_schema_dict = {
+        "200": openapi.Response(
+            description="Successfully Updated Coins",
+            schema=MessageSerializer,
+            examples={
+                "application/json": {
+                    "message": "Coins Updated"
+                }
+            }
+        ),
+        "400": openapi.Response(
+            description="Errors",
+            schema=UpdateCoinSerializer,
+            examples={
+                "application/json": {
+                    "user": [
+                        "User Not found. Invalid Google Id."
+                    ]
+                }
+            }
+        ),
+        "500": openapi.Response(
+            description="Internal Server Error",
+            schema=MessageSerializer,
+            examples={
+                "application/json": {
+                    "message": "Internal Server Error"
+                }
+            }
+        )
+    }
 
+    @swagger_auto_schema(responses=response_schema_dict)
     def put(self, request):
         """
-        Post Request To Update User Coins
-
-        - Can be Used by Frontend To reward users for watching rewarded advertisement.
+        - ## Put Request To Update User Coins
+        - ## Can be Used by Frontend To reward users for watching rewarded advertisement.
         """
         try:
             data = request.data
@@ -605,8 +709,8 @@ class UpdateUserCoinsView(GenericAPIView):
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             validated_data = serializer.validated_data
             profile = Profile.objects.get(user__google_id=validated_data['google_id'])
-            profile.coins += validated_data['coins']
+            profile.coins += int(validated_data['coins'])
             profile.save()
-            return Response({"message": "Coins Updated", "newBalance": profile.coins})
+            return Response({"message": "Coins Updated"}, status=status.HTTP_200_OK)
         except:
             return Response({"message": "Internal Server Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

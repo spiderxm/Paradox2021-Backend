@@ -1,5 +1,4 @@
 import uuid
-
 from rest_framework import serializers
 from .models import ParadoxUser, Referral, Questions, Hints, Profile, Rules, ExeMembers, UserHintLevel
 
@@ -111,7 +110,7 @@ class UserHintLevelSerializer(serializers.Serializer):
         level = attrs.get('level')
         hintNumber = attrs.get('hintNumber')
         if not ParadoxUser.objects.filter(google_id=google_id).exists():
-            raise serializers.ValidationError({'user': ('User Not Found.', 'Invalid Google Id.')})
+            raise serializers.ValidationError({'user': 'User Not found. Invalid Google Id.'})
         hintDetails = UserHintLevel.objects.get(user__google_id=google_id)
         if hintDetails.level == level:
             if hintDetails.hintNumber >= hintNumber:
@@ -132,7 +131,7 @@ class AnswerSerializer(serializers.Serializer):
     def validate(self, attrs):
         google_id = attrs.get('google_id')
         if not ParadoxUser.objects.filter(google_id=google_id).exists():
-            raise serializers.ValidationError({'user': ('User Not Found.', 'Invalid Google Id.')})
+            raise serializers.ValidationError({'user': 'User Not found. Invalid Google Id.'})
 
         return super().validate(attrs)
 
@@ -147,7 +146,7 @@ class UpdateCoinSerializer(serializers.Serializer):
     def validate(self, attrs):
         google_id = attrs.get('google_id')
         if not ParadoxUser.objects.filter(google_id=google_id).exists():
-            raise serializers.ValidationError({'user': ('User Not Found.', 'Invalid Google Id.')})
+            raise serializers.ValidationError({'user': 'User Not found. Invalid Google Id.'})
         return super().validate(attrs)
 
 
@@ -156,16 +155,6 @@ class MessageSerializer(serializers.Serializer):
     Message Serializer
     """
     message = serializers.CharField(max_length=255)
-
-
-class ProfileSerializer(serializers.ModelSerializer):
-    """
-    User Profile Serializer
-    """
-
-    class Meta:
-        model = Profile
-        fields = "__all__"
 
 
 class UserDetailsSerializer(serializers.ModelSerializer):
@@ -184,3 +173,10 @@ class ExeMembersPositionListSerializer(serializers.Serializer):
     Serializer for Exe Members Positions List
     """
     list = serializers.ListField()
+
+
+class IsUserPresentSerializer(serializers.Serializer):
+    """
+    Serializer to check user present or not
+    """
+    userPresent = serializers.BooleanField()
