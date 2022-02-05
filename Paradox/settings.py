@@ -76,8 +76,12 @@ WSGI_APPLICATION = 'Paradox.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'paradox',
+        'HOST': 'database-1.cvr7fpc3npbb.ap-south-1.rds.amazonaws.com',
+        'PORT': '3306',
+        'USER': 'root',
+        'PASSWORD': '4eBkh,qSB[bAX8gy'
     }
 }
 
@@ -122,5 +126,3 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.JSONRenderer',
     ],
 }
-
-
